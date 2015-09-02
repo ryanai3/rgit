@@ -1,12 +1,7 @@
-#!
-require "rgit/version"
+#!/usr/bin/env ruby
+require "bundler/setup"
+require "rgit/cli"
 
-class Rgit < Thor
-  desc "test", "A test function"
-  def test(*args)
-    puts args
-  end
+module Rgit
+
 end
-
-Rgit.start
-

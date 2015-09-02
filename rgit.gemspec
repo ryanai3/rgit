@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["ryanai3@hotmail.com"]
 
   spec.summary       = %q{Manage recursive git & push to submodules}
-  spec.description   = %q{TODO: Write a longer description or delete this line.}
+  spec.description   = %q{Exactly what it says }
   spec.homepage      = "TODO: Put your gem's website or public repo URL here."
   spec.license       = "MIT"
 
@@ -23,9 +23,11 @@ Gem::Specification.new do |spec|
   end
 
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
-  spec.bindir        = "exe"
-  spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
+  spec.bindir        = "bin"
+  spec.executables   = ["rgit"]
   spec.require_paths = ["lib"]
+
+  spec.add_dependency "thor"
 
   spec.add_development_dependency "bundler", "~> 1.10"
   spec.add_development_dependency "rake", "~> 10.0"
