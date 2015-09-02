@@ -1,9 +1,14 @@
-
+# stdlib imports
+require "pathname"
+# gem imports
 require "thor"
+# Local imports
+require "descriptions"
+
+
 
 module Rgit
   class Cli < Thor
-
     no_commands {
       def format_options(option_hash)
         result = ""
