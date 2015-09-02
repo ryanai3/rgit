@@ -86,6 +86,24 @@ module Impl
       res_dir
     end
 
+    def git_command(cmd, opt_str, dir)
+      capture_pty_stdout("git #{cmd} #{opt_str}", dir)
+    end
+
+    # Opens a virtual shell at the specified dir and runs the given cmd
+    def capture_pty_stdout(cmd, dir)
+      result = ''
+      PTY.spawn("cd #{dir.realpath}; #{cmd}") do |stdout, stdin, pid|
+        begin
+          stdout.each { |line| result += line }
+        rescue Errno::EIO #Done getting output
+          result
+        end
+      end
+      result
+    end
+
+
     def init_subrepo(parent_dir, subrepo_dir)
 
     end
