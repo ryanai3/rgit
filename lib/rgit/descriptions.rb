@@ -1,4 +1,5 @@
 class Descriptions
+  attr_accessor :init
   def initialize
     @init = {
         long_desc:

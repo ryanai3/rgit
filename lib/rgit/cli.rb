@@ -3,7 +3,7 @@ require "pathname"
 # gem imports
 require "thor"
 # Local imports
-require "descriptions"
+require_relative "descriptions"
 # Monkey Patches - import
 require "core_extensions/pathname/easychildcheck.rb"
 # Monkey Patches - apply
