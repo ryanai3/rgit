@@ -36,9 +36,7 @@ module Rgit
       def lowest_repo_above(start_dir)
         res_dir = nil
         start_dir.ascend { |dir|
-          if (dir + ".git").exist?
-            j = Pathname.new(32)
-            j.
+          if dir.has_child? ".git"
             res_dir = dir
             break
           end
