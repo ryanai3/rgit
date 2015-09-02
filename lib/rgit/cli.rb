@@ -3,6 +3,29 @@ require "thor"
 
 module Rgit
   class Cli < Thor
+
+    no_commands {
+      def format_options(option_hash)
+        result = ""
+        option_hash.each { |k, v|
+          key_str = " --#{k.to_s.gsub("_", "-")}"
+          case v # v is truthy in all cases except: nil, false
+            when [true, false].include?(v) # it's a boolean
+              result << key_str
+            when String
+              result << key_str << "=#{v}"
+            when Fixnum
+              result << key_str << "=#{v}"
+            when Hash
+              v.each { |key, val|
+                result << key_str << " #{key}=#{val}"
+              }
+          end
+        }
+        result
+      end
+    }
+
     descriptions = Descriptions.new
     @init_descriptions = descriptions.init
 
