@@ -8,6 +8,7 @@ require "parseconfig"
 # Local imports
 require_relative "descriptions"
 require_relative "version"
+
 # Monkey Patches - import
 require "core_extensions/pathname/easychildcheck.rb"
 # Monkey Patches - apply
