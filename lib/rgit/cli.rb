@@ -12,38 +12,6 @@ Pathname.include CoreExtensions::Pathname::EasyChildCheck
 
 module Rgit
   class Cli < Thor
-    no_commands {
-      def format_options(option_hash)
-        result = ""
-        option_hash.each { |k, v|
-          key_str = " --#{k.to_s.gsub("_", "-")}"
-          case v # v is truthy in all cases except: nil, false
-            when [true, false].include?(v) # it's a boolean
-              result << key_str
-            when String
-              result << key_str << "=#{v}"
-            when Fixnum
-              result << key_str << "=#{v}"
-            when Hash
-              v.each { |key, val|
-                result << key_str << " #{key}=#{val}"
-              }
-          end
-        }
-        result
-      end
-
-      def lowest_repo_above(start_dir)
-        res_dir = nil
-        start_dir.ascend { |dir|
-          if dir.has_child? ".git"
-            res_dir = dir
-            break
-          end
-        }
-        res_dir
-      end
-    }
 
     descriptions = Descriptions.new
     @init_descriptions = descriptions.init
@@ -84,3 +52,49 @@ module Rgit
     end
   end
 end
+
+module Impl
+  class Cli
+    def format_options(option_hash)
+      result = ""
+      option_hash.each { |k, v|
+        key_str = " --#{k.to_s.gsub("_", "-")}"
+        case v # v is truthy in all cases except: nil, false
+        when [true, false].include?(v) # it's a boolean
+          result << key_str
+        when String
+          result << key_str << "=#{v}"
+        when Fixnum
+          result << key_str << "=#{v}"
+        when Hash
+          v.each { |key, val|
+            result << key_str << " #{key}=#{val}"
+          }
+        end
+      }
+      result
+    end
+
+    def lowest_repo_above(start_dir)
+      res_dir = nil
+      start_dir.ascend { |dir|
+        if dir.has_child? ".git"
+          res_dir = dir
+          break
+        end
+      }
+      res_dir
+    end
+
+    def init_subrepo(parent_dir, subrepo_dir)
+
+    end
+
+    def init_repo(directory, options)
+
+    end
+  end
+end
+
+Rgit.include Impl # for non-cli methods
+
