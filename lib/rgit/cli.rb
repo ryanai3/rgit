@@ -4,7 +4,10 @@ require "pathname"
 require "thor"
 # Local imports
 require "descriptions"
-
+# Monkey Patches - import
+require "core_extensions/pathname/easychildcheck.rb"
+# Monkey Patches - apply
+Pathname.include CoreExtensions::Pathname::EasyChildCheck
 
 
 module Rgit
@@ -28,6 +31,19 @@ module Rgit
           end
         }
         result
+      end
+
+      def lowest_repo_above(start_dir)
+        res_dir = nil
+        start_dir.ascend { |dir|
+          if (dir + ".git").exist?
+            j = Pathname.new(32)
+            j.
+            res_dir = dir
+            break
+          end
+        }
+        res_dir
       end
     }
 
