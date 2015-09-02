@@ -3,8 +3,15 @@ require "thor"
 
 module Rgit
   class Cli < Thor
-    desc "test", "A test function"
+    descriptions = Descriptions.new
+    @init_descriptions = descriptions.init
 
+    desc "init", "Create an empty Rgit repository or reinitialize an existing one"
+    def init
+
+    end
+
+    desc "test", "A test function"
     def test(*args)
       puts args
     end
