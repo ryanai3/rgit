@@ -110,7 +110,31 @@ module Impl
     end
 
     def init_repo(directory, options)
+      # Check if a git repository exists.
+      already_has_git = directory.has_child?(".git")
+      # 1. Initialize a git repository w/ provided options
+      git_command("init", format_options(options), directory)
 
+      puts("Initialized empty rGit repository in #{directory}") unless options[:quiet]
+    end
+
+    def initial_repo_setup_in(directory)
+      # 1. Add a fake original commit so that we can graft once and for all
+      #    and a fake first commit to have the original as its parent
+
+      # Add a first commit in master branch
+      git_command("commit", "--allow-empty -m \"first commit in #{directory}\"", directory)
+      first_commit = git_command("log", "--format=%H -n1", directory).strip
+      # Add a first commit in base branch for grafts
+      git_command("checkout", "--orphan @rgit-base-for-graft", directory)
+      git_command("commit", "--allow-empty -m \"original in #{directory}\"", directory)
+      orig_commit = git_command("log", "--format=%H -n1", directory).strip
+      # Return git to master branch
+      git_command("checkout", "master")
+    
+      # 2. Add a graft so we have a fake "first commit" for all subrepos
+      # that we can use for cthulhu merges :)
+      Grafts.append_to_grafts!(directory, first_commit, orig_commit)
     end
   end
 
