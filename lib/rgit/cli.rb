@@ -130,8 +130,8 @@ module Impl
       git_command("commit", "--allow-empty -m \"original in #{directory}\"", directory)
       orig_commit = git_command("log", "--format=%H -n1", directory).strip
       # Return git to master branch
-      git_command("checkout", "master")
-    
+      git_command("checkout", "master", directory)
+   
       # 2. Add a graft so we have a fake "first commit" for all subrepos
       # that we can use for cthulhu merges :)
       Grafts.append_to_grafts!(directory, first_commit, orig_commit)
