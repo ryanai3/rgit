@@ -9,10 +9,13 @@ require "core_extensions/pathname/easychildcheck.rb"
 # Monkey Patches - apply
 Pathname.include CoreExtensions::Pathname::EasyChildCheck
 
+module Impl
+
+end
 
 module Rgit
   class Cli < Thor
-
+    include Impl
     descriptions = Descriptions.new
     @init_descriptions = descriptions.init
 
@@ -54,12 +57,13 @@ module Rgit
 end
 
 module Impl
-  class Cli
-    def format_options(option_hash)
-      result = ""
-      option_hash.each { |k, v|
-        key_str = " --#{k.to_s.gsub("_", "-")}"
-        case v # v is truthy in all cases except: nil, false
+
+  require "pty"
+  def format_options(option_hash)
+    result = ""
+    option_hash.each { |k, v|
+      key_str = " --#{k.to_s.gsub("_", "-")}"
+      case v # v is truthy in all cases except: nil, false
         when [true, false].include?(v) # it's a boolean
           result << key_str
         when String
@@ -70,74 +74,76 @@ module Impl
           v.each { |key, val|
             result << key_str << " #{key}=#{val}"
           }
-        end
-      }
-      result
-    end
-
-    def lowest_repo_above(start_dir)
-      res_dir = nil
-      start_dir.ascend { |dir|
-        if dir.has_child? ".git"
-          res_dir = dir
-          break
-        end
-      }
-      res_dir
-    end
-
-    def git_command(cmd, opt_str, dir)
-      capture_pty_stdout("git #{cmd} #{opt_str}", dir)
-    end
-
-    # Opens a virtual shell at the specified
-    # dir and runs the given cmd
-    def capture_pty_stdout(cmd, dir)
-      result = ''
-      PTY.spawn("cd #{dir.realpath}; #{cmd}") do |stdout, stdin, pid|
-        begin
-          stdout.each { |line| result += line }
-        rescue Errno::EIO #Done getting output
-          result
-        end
       end
-      result
-    end
-
-
-    def init_subrepo(parent_dir, subrepo_dir)
-
-    end
-
-    def init_repo(directory, options)
-      # Check if a git repository exists.
-      already_has_git = directory.has_child?(".git")
-      # 1. Initialize a git repository w/ provided options
-      git_command("init", format_options(options), directory)
-
-      puts("Initialized empty rGit repository in #{directory}") unless options[:quiet]
-    end
-
-    def initial_repo_setup_in(directory)
-      # 1. Add a fake original commit so that we can graft once and for all
-      #    and a fake first commit to have the original as its parent
-
-      # Add a first commit in master branch
-      git_command("commit", "--allow-empty -m \"first commit in #{directory}\"", directory)
-      first_commit = git_command("log", "--format=%H -n1", directory).strip
-      # Add a first commit in base branch for grafts
-      git_command("checkout", "--orphan @rgit-base-for-graft", directory)
-      git_command("commit", "--allow-empty -m \"original in #{directory}\"", directory)
-      orig_commit = git_command("log", "--format=%H -n1", directory).strip
-      # Return git to master branch
-      git_command("checkout", "master", directory)
-   
-      # 2. Add a graft so we have a fake "first commit" for all subrepos
-      # that we can use for cthulhu merges :)
-      Grafts.append_to_grafts!(directory, first_commit, orig_commit)
-    end
+    }
+    result
   end
 
+  def lowest_repo_above(start_dir)
+    res_dir = nil
+    start_dir.ascend { |dir|
+      if dir.has_child? ".git"
+        res_dir = dir
+        break
+      end
+    }
+    res_dir
+  end
+
+  def git_command(cmd, opt_str, dir)
+    run_in_shell("git #{cmd} #{opt_str}", dir)
+  end
+
+  def run_in_shell(cmd, dir)
+    `cd #{dir}; #{cmd}`
+  end
+
+  # Opens a virtual shell at the specified
+  # dir and runs the given cmd
+  def run_in_pty(cmd, dir)
+    result = ''
+    PTY.spawn("cd #{dir.realpath}; #{cmd}") do |stdout, stdin, pid|
+      begin
+        stdout.each { |line| result += line }
+      rescue Errno::EIO #Done getting output
+        result
+      end
+    end
+    result
+  end
+
+  def init_subrepo(parent_dir, subrepo_dir)
+    # add .gitrepo file to parent
+    # add
+  end
+
+  def init_repo(directory, options)
+    repo_already_exists = directory.has_child?(".git")
+    # 1. Initialize a git repository w/ provided options
+    git_command("init", format_options(options), directory)
+    initial_repo_setup_in directory unless repo_already_exists
+    puts("Initialized empty rGit repository in #{directory}") unless options[:quiet]
+  end
+
+ def initial_repo_setup_in(directory)
+    # 1. Add a fake original commit so that we can graft once and for all
+    #    and a fake first commit to have the original as its parent
+
+    # Add a first commit in master branch
+    git_command("commit", "--allow-empty -m \"first commit in #{directory}\"", directory)
+    first_commit = git_command("log", "--format=%H -n1", directory).strip
+    # Add a first commit in base branch for grafts
+    git_command("checkout", "--orphan @rgit-base-for-graft", directory)
+    git_command("commit", "--allow-empty -m \"original in #{directory}\"", directory)
+    orig_commit = git_command("log", "--format=%H -n1", directory).strip
+    # Return git to master branch
+    git_command("checkout", "master", directory)
+    
+    # 2. Add a graft so we have a fake "first commit" for all subrepos
+    # that we can use for cthulhu merges :)
+    Grafts.append_to_grafts!(directory, first_commit, orig_commit)
+  end
+ 
   class Grafts < Hash
     def self.from_git(directory)
       @location = directory + ".git/info/grafts"
@@ -168,6 +174,3 @@ module Impl
     end
   end
 end
-
-Rgit.include Impl # for non-cli methods
-
