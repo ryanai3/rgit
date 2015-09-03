@@ -90,7 +90,8 @@ module Impl
       capture_pty_stdout("git #{cmd} #{opt_str}", dir)
     end
 
-    # Opens a virtual shell at the specified dir and runs the given cmd
+    # Opens a virtual shell at the specified
+    # dir and runs the given cmd
     def capture_pty_stdout(cmd, dir)
       result = ''
       PTY.spawn("cd #{dir.realpath}; #{cmd}") do |stdout, stdin, pid|
@@ -110,6 +111,36 @@ module Impl
 
     def init_repo(directory, options)
 
+    end
+  end
+
+  class Grafts < Hash
+    def self.from_git(directory)
+      @location = directory + ".git/info/grafts"
+      res = new
+      @location.open.readlines.each do |line|
+        # Shas are 40 characters, first sha is child
+        # TODO: HANDLE GRAFT FILES W/ MORE THAN ONE FAKE PARENT FOR A COMMIT
+        res.store(*line.gsub(" ", "").slice(40))
+      end
+      res
+    end
+
+    def self.append_to_grafts!(directory, child_sha, parent_sha)
+      graft_dir = directory + ".git/info"
+      FileUtils.mkdir_p(graft_dir)
+      File.open(graft_dir + "grafts", "w") { |file|
+        file.puts "#{child_sha} #{parent_sha}"
+      }
+    end
+
+    def write_to_disk!
+      FileUtils.mkdir_p(@location.dirname)
+      File.open(@location, 'w') do |f|
+        each do |k, v|
+          f << "#{k} #{v}\n"
+        end
+      end
     end
   end
 end
