@@ -2,6 +2,7 @@
 require "pathname"
 # gem imports
 require "thor"
+require "rugged"
 # Local imports
 require_relative "descriptions"
 # Monkey Patches - import
@@ -125,7 +126,7 @@ module Impl
     puts("Initialized empty rGit repository in #{directory}") unless options[:quiet]
   end
 
- def initial_repo_setup_in(directory)
+  def initial_repo_setup_in(directory)
     # 1. Add a fake original commit so that we can graft once and for all
     #    and a fake first commit to have the original as its parent
 
@@ -143,7 +144,7 @@ module Impl
     # that we can use for cthulhu merges :)
     Grafts.append_to_grafts!(directory, first_commit, orig_commit)
   end
- 
+
   class Grafts < Hash
     def self.from_git(directory)
       @location = directory + ".git/info/grafts"
