@@ -3,8 +3,10 @@ require "pathname"
 # gem imports
 require "thor"
 require "rugged"
+require "parseconfig"
 # Local imports
 require_relative "descriptions"
+require_relative "version"
 # Monkey Patches - import
 require "core_extensions/pathname/easychildcheck.rb"
 # Monkey Patches - apply
@@ -46,8 +48,24 @@ module Rgit
         enum: ["false", "true", "umask", "group", "all", "world", "everybody"],
         desc: @init_descriptions[:shared]
       }
-    def init
+    def init(directory = Pathname.pwd)
+      # Get directory as pathname, default being current location
+      directory = Pathname.new(directory)
+      unless directory.exist? # make the directory if it doesn't exist
+        directory.mkpath
+      end
 
+      # Find parent subrepo/repo if it exists
+      git_parent, subrepo_parent = lowest_above(directory)
+      # If we have a parent, and that parent is not us
+      # -> initialize a subrepo
+      # else -> initialize a repo
+      # dir != parent check is needed since user may "re-init" a repo
+      if (git_parent) && directory != git_parent
+        init_subrepo(subrepo_parent, git_parent, directory)
+      else
+        init_repo(directory, options)
+      end
     end
 
     desc "test", "A test function"
@@ -91,6 +109,23 @@ module Impl
     res_dir
   end
 
+  def lowest_gitrepo_above(start_dir)
+    res_dir = nil
+    start_dir.ascend{ |dir|
+      if dir.has_child? ".git"
+        res_dir = dir
+        break
+      end
+    }
+  end
+
+  def lowest_above(start_dir)
+    lowest_gitrepo = lowest_gitrepo_above(start_dir)
+    lowest_subrepo = Branches.new(lowest_gitrepo).branch_for_path(start_dir)
+    [lowest_subrepo || lowest_gitrepo, lowest_gitrepo]
+  end
+
+  # Calling git & shells
   def git_command(cmd, opt_str, dir)
     run_in_shell("git #{cmd} #{opt_str}", dir)
   end
@@ -143,6 +178,57 @@ module Impl
     # 2. Add a graft so we have a fake "first commit" for all subrepos
     # that we can use for cthulhu merges :)
     Grafts.append_to_grafts!(directory, first_commit, orig_commit)
+  end
+
+  class Branches
+    attr_accessor :current_group
+    def initialize(dir)
+      @groups = self.get_branches(dir)
+      @dir = dir
+      @current_group = git_command("symbolic-ref", "HEAD", dir)
+                           .strip.gsub("ref/heads/", "")
+    end
+
+    def update
+      @groups = self.get_branches(@dir)
+      @current_group = git_command("symbolic-ref", "HEAD", @dir)
+                           .strip.gsub("refs/heads/", "")
+    end
+
+    def self.get_branches(dir)
+      heads = dir + ".git/refs/heads"
+      groups = heads.children(false).select do |path|
+        path.to_s.start_with?("@")
+      end
+      groups.map{|group| [group, extract_branches(group)]}.to_h
+    end
+
+    def self.extract_branches(path)
+      res = {}
+      path.children.each do |child|
+        name = child.basename.to_str
+        if name.start_with?("&")
+          res[:sitting_branch] = child
+        else
+          res[name] = extract_branches(child)
+        end
+      end
+      res
+    end
+
+    def groups
+      @groups.keys
+    end
+
+    def branch_for_path(path)
+      branch = nil
+      so_far = @groups[@current_group]
+      path.relative_path_from(@dir).descend do |f|
+        sitting_branch = so_far[:sitting_branch]
+        branch = sitting_branch if sitting_branch
+        so_far = so_far[f]
+      end
+    end
   end
 
   class Grafts < Hash
