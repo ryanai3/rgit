@@ -148,9 +148,30 @@ module Impl
     result
   end
 
-  def init_subrepo(parent_dir, subrepo_dir)
-    # add .gitrepo file to parent
-    # add
+  # Transactions
+  def stash_unstash(dir)
+    git_command("stash", "", dir)
+    yield
+    git_command("stash", "pop --index", dir)
+  end
+
+  # git branch inside is the top branch of the group we were just in
+  def uncap_cap!(dir)
+    branches = Branches.new(dir)
+    group_head = branches.current_group
+    git_command("reset", "--hard HEAD~1", dir)
+    yield group_head
+    opt_str = ""
+    branches[group_head].each{|branch| opt_str << branch.full_name << " "}
+    git_command("merge", opt_str, dir)
+  end
+
+  def uncap_cap(dir)
+    stash_unstash(dir) do
+      uncap_cap!(dir)
+    end
+  end
+
   end
 
   def init_repo(directory, options)
@@ -161,19 +182,19 @@ module Impl
     puts("Initialized empty rGit repository in #{directory}") unless options[:quiet]
   end
 
-  def initial_repo_setup_in(directory)
+  def initial_repo_setup_in(directory, branch = "@master/./master")
     # 1. Add a fake original commit so that we can graft once and for all
     #    and a fake first commit to have the original as its parent
-
     # Add a first commit in master branch
+    git_command("checkout", branch, directory)
     git_command("commit", "--allow-empty -m \"first commit in #{directory}\"", directory)
     first_commit = git_command("log", "--format=%H -n1", directory).strip
     # Add a first commit in base branch for grafts
     git_command("checkout", "--orphan @rgit-base-for-graft", directory)
     git_command("commit", "--allow-empty -m \"original in #{directory}\"", directory)
     orig_commit = git_command("log", "--format=%H -n1", directory).strip
-    # Return git to master branch
-    git_command("checkout", "master", directory)
+    # Return git to requested branch
+    git_command("checkout", branch, directory)
     
     # 2. Add a graft so we have a fake "first commit" for all subrepos
     # that we can use for cthulhu merges :)
