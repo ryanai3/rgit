@@ -204,31 +204,51 @@ module Impl
   class Branches
     attr_accessor :current_group
     def initialize(dir)
-      @groups = self.get_branches(dir)
+      @groups = get_branches(dir)
       @dir = dir
-      @current_group = git_command("symbolic-ref", "HEAD", dir)
-                           .strip.gsub("ref/heads/", "")
+      @current_branch = git_command("symbolic-ref", "HEAD", dir)
+                            .strip.gsub("ref/heads/")
+      @current_group = @current_branch[1..-1].split("/", 2)[0]
+      @groups2branch = flat_hash(@groups).each.select { |k, v|
+        
+      }
+
     end
 
     def update
       @groups = self.get_branches(@dir)
       @current_group = git_command("symbolic-ref", "HEAD", @dir)
-                           .strip.gsub("refs/heads/", "")
+                           .strip.gsub("refs/heads/@", "")
+    end
+
+    def self.flat_hash(h,f=[],g={})
+      return g.update({ f=>h }) unless h.is_a? Hash
+      h.each { |k,r| flat_hash(r,f+[k],g) }
+      g
+    end
+
+    def get_branches(dir)
+      self.class.get_branches(dir)
     end
 
     def self.get_branches(dir)
       heads = dir + ".git/refs/heads"
-      groups = heads.children(false).select do |path|
-        path.to_s.start_with?("@")
+      groups = heads.children.select do |path|
+        path.basename.to_s.start_with?("@")
       end
-      groups.map{|group| [group, extract_branches(group)]}.to_h
+      # remove first char("@") from group, extract branches
+      groups.map{|group| [group[1..-1], extract_branches(group)]}.to_h
+    end
+
+    def extract_branches(path)
+      self.class.extract_branches(path)
     end
 
     def self.extract_branches(path)
       res = {}
       path.children.each do |child|
         name = child.basename.to_str
-        if name.start_with?("&")
+        if name.start_with?("%")
           res[:sitting_branch] = child
         else
           res[name] = extract_branches(child)
@@ -241,6 +261,11 @@ module Impl
       @groups.keys
     end
 
+    def [](group)
+      structure = @groups[group]
+      structure.each
+    end
+
     def branch_for_path(path)
       branch = nil
       so_far = @groups[@current_group]
@@ -249,6 +274,17 @@ module Impl
         branch = sitting_branch if sitting_branch
         so_far = so_far[f]
       end
+    end
+
+    def path_for_branch(branch_fullname)
+      # branchname is a fully qualified path from top git repo
+      # + other info
+      # i.e. #{group}/full/path/to/#{sub_branch}
+      # unless it's a group-level branch in which case
+      # #{group}/%group
+      group, branch = branch_fullname.split("/", 2)
+      path = branch.rpartition("%")[0]
+      dir + path
     end
   end
 
@@ -270,6 +306,13 @@ module Impl
       File.open(graft_dir + "grafts", "w") { |file|
         file.puts "#{child_sha} #{parent_sha}"
       }
+    end
+
+    def self.graft_to_base!(directory, child_sha)
+      parent_sha = File.open(
+          directory + ".git/refs/heads/@rgit-base-for-graft",
+          &:readline).strip
+      append_to_grafts!(directory, child_sha, parent_sha)
     end
 
     def write_to_disk!
