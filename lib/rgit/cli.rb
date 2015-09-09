@@ -281,4 +281,53 @@ module Impl
       end
     end
   end
+  #contains the info for a subrepo from the perspective of the parent
+  # i.e. what is put in the ".gitmodules" file
+  class Submodules
+    def self.initialize(path:)
+      @path = path
+      @conf = ParseConfig.new(@path + ".gitmodules")
+      submodules = @conf.get_groups.select { |n| n.start_with?("submodule") }
+      @submodules = submodules.map { |name|
+        v = @conf[name]
+        k = name.sub("submodule ", "").gsub(/"/, "")
+        [k, v]
+      }.to_h
+    end
+
+    def add(name: "", values: {})
+      @conf.add("submodule \"#{name}\"", values)
+    end
+
+    def write_to_disk!
+      file.open(@path + ".gitmodules", "w") { |f| @conf.write(f, false)}
+    end
+  end
+
+  # contains the info for a subrepo necessary for operations stored in
+  # it's ".subrepo" file (version controlled by parent)
+  class SubRepoInfo
+    attr_accessor :pin, :rgit_version
+    def self.initialize(pin:, rgit_version: Rgit::VERSION, dir:)
+      @pin = pin
+      @rgit_version = rgit_version
+      @loc = dir + ".subrepo"
+    end
+
+    def self.default(dir)
+      initialize(
+        pin: "latest",
+        rgit_version: RGit::Version,
+        loc: dir + ".subrepo",
+      )
+    end
+
+    def write_to_disk!
+      file.open(@loc, "w") do |f|
+        f.put("pin = #{@pin}\n"\
+              "rgit_version = #{@rgit_version}")
+      end
+    end
+  end
+
 end
