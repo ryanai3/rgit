@@ -282,7 +282,35 @@ module Rgit
     desc "test", "A test function"
     def test(*args)
       j = args.class
+      puts j
+      puts args
     end
+
+    desc "log", "Show commit logs"
+    def log(*args)
+      pass_through_cmd("log", args)
+    end
+
+    desc "status", "Show the working tree status"
+    def status(*args)
+      git_output = pass_through_cmd("status", args)
+      out = git_output.partition(%r{@[^@]*/%.*}) # isolate branchname
+      out[1] = out[1][1..-1].partition("/")[0] if out[1] != ""
+      # replace w/ group_name - can't use put since thor does overriding of it
+      puts out.join()
+    end
+
+    desc "diff", "Show changes between commits, commit and working tree, etc."
+    def diff(*args)
+      p pass_through_cmd("diff", args)
+    end
+
+    desc "grep", "Print lines matching a pattern"
+    def grep(*args)
+      p pass_through_cmd("grep", args)
+    end
+
+
   end
 end
 
@@ -308,6 +336,10 @@ module Impl
       end
     }
     result
+  end
+
+  def pass_through_cmd(cmd, args)
+    run_in_pty("git #{cmd} #{args.join(" ")}", Pathname.pwd)
   end
 
   def lowest_repo_above(start_dir)
