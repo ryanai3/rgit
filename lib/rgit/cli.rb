@@ -233,6 +233,28 @@ module Rgit
     descriptions = Descriptions.new
     @init_descriptions = descriptions.init
 
+    desc "add", "Add file contents to the index"
+    def add(*args)
+      pass_through_cmd("add", args)
+    end
+
+    desc "diff", "Show changes between commits, commit and working tree, etc."
+    def diff(*args)
+      p pass_through_cmd("diff", args)
+    end
+
+    desc "grep", "Print lines matching a pattern"
+    def grep(*args)
+      p pass_through_cmd("grep", args)
+    end
+
+    desc "test", "A test function"
+    def test(*args)
+      j = args.class
+      puts j
+      puts args
+    end
+
     desc "init", "Create an empty Rgit repository or reinitialize an existing one"
     long_desc @init_descriptions[:long_desc]
     method_option :quiet,
@@ -279,18 +301,6 @@ module Rgit
       end
     end
 
-    desc "add", "Add file contents to the index"
-    def add(*args)
-      pass_through_cmd("add", args)
-    end
-
-    desc "test", "A test function"
-    def test(*args)
-      j = args.class
-      puts j
-      puts args
-    end
-
     desc "log", "Show commit logs"
     method_option :skip,
       { type: :number,
@@ -308,18 +318,6 @@ module Rgit
       # replace w/ group_name - can't use put since thor does overriding of it
       puts out.join()
     end
-
-    desc "diff", "Show changes between commits, commit and working tree, etc."
-    def diff(*args)
-      p pass_through_cmd("diff", args)
-    end
-
-    desc "grep", "Print lines matching a pattern"
-    def grep(*args)
-      p pass_through_cmd("grep", args)
-    end
-
-
   end
 end
 
