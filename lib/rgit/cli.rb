@@ -292,8 +292,12 @@ module Rgit
     end
 
     desc "log", "Show commit logs"
+    method_option :skip,
+      { type: :number,
+        default: 0,
+      }
     def log(*args)
-      pass_through_cmd("log", args)
+      pass_through_cmd("log --skip=#{options[:skip] + 1}", args)
     end
 
     desc "status", "Show the working tree status"
