@@ -2,7 +2,8 @@ module CoreExtensions
   module Pathname
     module EasyChildCheck
       def has_child?(child)
-        (self + child).exist?
+        path = self + child
+        path.exist? || path.directory?
       end
     end
   end

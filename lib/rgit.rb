@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 require "bundler/setup"
-require "rgit/cli"
+require_relative "rgit/cli"
 
 
 module Rgit
