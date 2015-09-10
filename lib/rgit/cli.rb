@@ -297,8 +297,7 @@ module Rgit
         default: 0,
       }
     def log(*args)
-      byebug
-      pass_through_cmd("log --skip=#{options[:skip] + 1}", args)
+      exec("git log --skip=#{options[:skip] + 1} #{args.join()}")
     end
 
     desc "status", "Show the working tree status"
