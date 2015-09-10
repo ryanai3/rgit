@@ -238,6 +238,11 @@ module Rgit
       pass_through_cmd("add", args)
     end
 
+    desc "bisect", "Find by binary search the change that introduced a bug"
+    def bisect(*args)
+      exec("git bisect #{args.join}")
+    end
+
     desc "diff", "Show changes between commits, commit and working tree, etc."
     def diff(*args)
       p pass_through_cmd("diff", args)
