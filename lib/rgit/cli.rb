@@ -233,33 +233,6 @@ module Rgit
     descriptions = Descriptions.new
     @init_descriptions = descriptions.init
 
-    desc "add", "Add file contents to the index"
-    def add(*args)
-      pass_through_cmd("add", args)
-    end
-
-    desc "bisect", "Find by binary search the change that introduced a bug"
-    def bisect(*args)
-      exec("git bisect #{args.join}")
-    end
-
-    desc "diff", "Show changes between commits, commit and working tree, etc."
-    def diff(*args)
-      p pass_through_cmd("diff", args)
-    end
-
-    desc "grep", "Print lines matching a pattern"
-    def grep(*args)
-      p pass_through_cmd("grep", args)
-    end
-
-    desc "test", "A test function"
-    def test(*args)
-      j = args.class
-      puts j
-      puts args
-    end
-
     desc "init", "Create an empty Rgit repository or reinitialize an existing one"
     long_desc @init_descriptions[:long_desc]
     method_option :quiet,
@@ -306,12 +279,25 @@ module Rgit
       end
     end
 
+    desc "add", "Add file contents to the index"
+    def add(*args)
+      pass_through_cmd("add", args)
+    end
+
+    desc "test", "A test function"
+    def test(*args)
+      j = args.class
+      puts j
+      puts args
+    end
+
     desc "log", "Show commit logs"
     method_option :skip,
       { type: :number,
         default: 0,
       }
     def log(*args)
+      byebug
       pass_through_cmd("log --skip=#{options[:skip] + 1}", args)
     end
 
@@ -323,6 +309,18 @@ module Rgit
       # replace w/ group_name - can't use put since thor does overriding of it
       puts out.join()
     end
+
+    desc "diff", "Show changes between commits, commit and working tree, etc."
+    def diff(*args)
+      p pass_through_cmd("diff", args)
+    end
+
+    desc "grep", "Print lines matching a pattern"
+    def grep(*args)
+      p pass_through_cmd("grep", args)
+    end
+
+
   end
 end
 
