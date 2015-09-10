@@ -293,7 +293,7 @@ module Rgit
 
     desc "log", "Show commit logs"
     method_option :skip,
-      { type: :number,
+      { type: :numeric,
         default: 0,
       }
     def log(*args)
