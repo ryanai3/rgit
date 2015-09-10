@@ -279,6 +279,11 @@ module Rgit
       end
     end
 
+    desc "add", "Add file contents to the index"
+    def add(*args)
+      pass_through_cmd("add", args)
+    end
+
     desc "test", "A test function"
     def test(*args)
       j = args.class
