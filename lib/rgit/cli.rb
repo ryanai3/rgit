@@ -233,6 +233,26 @@ module Rgit
     descriptions = Descriptions.new
     @init_descriptions = descriptions.init
 
+    desc "add", "Add file contents to the index"
+    def add(*args)
+      pass_through_cmd("add", args)
+    end
+
+    desc "bisect", "Find by binary search the change that introduced a bug"
+    def bisect(*args)
+      exec("git bisect #{args.join(" ")}")
+    end
+
+    desc "diff", "Show changes between commits, commit and working tree, etc."
+    def diff(*args)
+      p pass_through_cmd("diff", args)
+    end
+
+    desc "grep", "Print lines matching a pattern"
+    def grep(*args)
+      p pass_through_cmd("grep", args)
+    end
+
     desc "init", "Create an empty Rgit repository or reinitialize an existing one"
     long_desc @init_descriptions[:long_desc]
     method_option :quiet,
@@ -279,11 +299,7 @@ module Rgit
       end
     end
 
-    desc "add", "Add file contents to the index"
-    def add(*args)
-      pass_through_cmd("add", args)
-    end
-
+    
     desc "test", "A test function"
     def test(*args)
       j = args.class
@@ -309,16 +325,7 @@ module Rgit
       puts out.join()
     end
 
-    desc "diff", "Show changes between commits, commit and working tree, etc."
-    def diff(*args)
-      p pass_through_cmd("diff", args)
-    end
-
-    desc "grep", "Print lines matching a pattern"
-    def grep(*args)
-      p pass_through_cmd("grep", args)
-    end
-
+   
 
   end
 end
