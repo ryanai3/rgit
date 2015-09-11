@@ -322,7 +322,8 @@ module Rgit
       out = git_output.partition(%r{@[^@]*/%.*}) # isolate branchname
       out[1] = out[1][1..-1].partition("/")[0] if out[1] != ""
       # replace w/ group_name - can't use put since thor does overriding of it
-      puts out.join()
+      puts out.join.gsub(%r{use "git\s}, "use \"rgit ")
+                   .gsub(%r{run "git\s}, "run \"rgit ")
     end
 
    
